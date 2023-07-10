@@ -4,6 +4,12 @@
 
 ## Setup/Compile
 
+### Dependencies
+
+* libmariadbd-dev
+* libmariadb-dev-compat
+* libcgroup-dev
+
 ```
 make setup
 make

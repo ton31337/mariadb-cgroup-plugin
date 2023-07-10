@@ -5,6 +5,6 @@ setup:
 	chown mysql:mysql /sys/fs/cgroup/cpu/mysql
 
 all:
-	gcc cgroup.c -o cgroup.so -lcgroup `mysql_config --cflags --libs` -shared
+	gcc cgroup.c -o cgroup.so -lcgroup `mysql_config --libs` `mysql_config --include | xargs -n1 | xargs -I {} echo {}/server` -shared
 
 .DEFAULT_GOAL := all

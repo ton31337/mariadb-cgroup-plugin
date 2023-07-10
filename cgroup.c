@@ -10,16 +10,15 @@
  */
 
 #define MYSQL_DYNAMIC_PLUGIN
-#define gettid() ((pid_t)syscall(SYS_gettid))
-
-#include <my_global.h>
+#include <mysql.h>
 #include <mysql/plugin.h>
 #include <mysql/plugin_audit.h>
 #include <string.h>
 #include <sys/syscall.h>
+#include <unistd.h>
 #include <libcgroup.h>
 
-static my_bool sys_cgroup_enabled = FALSE;
+static my_bool sys_cgroup_enabled = 0;
 
 static void cgroup_toggle(MYSQL_THD thd __attribute__((unused)),
 			  struct st_mysql_sys_var *var __attribute__((unused)),
@@ -31,7 +30,7 @@ static void cgroup_toggle(MYSQL_THD thd __attribute__((unused)),
 
 static MYSQL_SYSVAR_BOOL(enabled, sys_cgroup_enabled, PLUGIN_VAR_OPCMDARG,
 			 "Enable/disable cgroup support", NULL, cgroup_toggle,
-			 FALSE);
+			 0);
 
 static void cgroup_set_task(const char *cgroup_name)
 {
@@ -88,7 +87,7 @@ static void cgroup_plugin(MYSQL_THD thd __attribute__((unused)),
 	if (!strcmp(mec->user, "root"))
 		return;
 
-	if (sys_cgroup_enabled == FALSE)
+	if (sys_cgroup_enabled == 0)
 		snprintf(path, sizeof(path), "mysql");
 	else
 		snprintf(path, sizeof(path), "mysql/%s", mec->user);
