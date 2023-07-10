@@ -119,6 +119,6 @@ maria_declare_plugin(cgroup)
 	MYSQL_AUDIT_PLUGIN, &cgroup_handler, "cgroup", "Donatas Abraitis",
 		"Attach Linux cgroup to MySQL thread", PLUGIN_LICENSE_GPL, NULL,
 		NULL, 0x1, NULL, cgroup_vars, "0.1",
-		MariaDB_PLUGIN_MATURITY_EXPERIMENTAL
+		MariaDB_PLUGIN_MATURITY_STABLE
 }
 maria_declare_plugin_end;
