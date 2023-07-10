@@ -11,7 +11,17 @@ make
 
 ## Copy plugin
 
-`cp cgroup.so /usr/lib/x86_64-linux-gnu/mariadb18/plugin`
+```
+MariaDB [(none)]> show variables where Variable_Name = 'plugin_dir';
++---------------+------------------------+
+| Variable_name | Value                  |
++---------------+------------------------+
+| plugin_dir    | /usr/lib/mysql/plugin/ |
++---------------+------------------------+
+1 row in set (0.002 sec)
+```
+
+`cp cgroup.so /usr/lib/mysql/plugin/`
 
 NOTE: The plugin directory might be different.
 
@@ -86,7 +96,11 @@ group mysql/donatas2 {
 
 ## Extra troubleshooting commands
 
+Create two MySQL users donatas1, and donatas2, then generate some fake CPU for each user.
+
 ```
+$ for x in $(seq 1 1000); do mysql -u donatas1 -ptest -e 'select * from information_schema.columns'; done
+$ for x in $(seq 1 1000); do mysql -u donatas2 -ptest -e 'select * from information_schema.columns'; done
 $ systemd-cgtop -P -d 1 --order=path /mysql
 $ watch -n1 'cat /sys/fs/cgroup/cpu/mysql/donatas/tasks'
 ```
