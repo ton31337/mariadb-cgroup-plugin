@@ -2,6 +2,10 @@
 
 ![](/mariadb-cgroup-plugin.gif)
 
+## cgroups2 and MariaDB 11.x support
+
+Use `feature/mariadb_11.1` branch.
+
 ## Setup/Compile
 
 ```
