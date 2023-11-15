@@ -8,7 +8,6 @@
 
 * libmariadbd-dev
 * libmariadb-dev-compat
-* libcgroup-dev
 
 ```
 make setup
@@ -32,6 +31,8 @@ MariaDB [(none)]> show variables where Variable_Name = 'plugin_dir';
 NOTE: The plugin directory might be different.
 
 Restart mysql.
+
+Put mysql's PID into parent cgroup: `echo $(pgrep -f mariadb) > /sys/fs/cgroup/mysql/cgroup.procs`.
 
 ## Verify
 
@@ -67,12 +68,12 @@ group mysql/donatas {
     }
   }
 
-  cpu { 
+  cpu {
     cpu.shares = 100;
     cpu.cfs_quota_us = 1000;
   }
 }
-    
+
 group mysql/donatas2 {
   perm {
     admin {

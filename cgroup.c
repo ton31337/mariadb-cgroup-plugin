@@ -4,7 +4,7 @@
  *
  * TL;DR; A drop-in replacement for CloudLinux MySQL Governor.
  *
- * Put MySQL threads into cgroups under /sys/fs/cgroup/cpu/mysql/<username>
+ * Put MySQL threads into cgroups under /sys/fs/cgroup/mysql/<username>
  * to limit specific users separately.
  *
  */
@@ -16,7 +16,7 @@
 #include <string.h>
 #include <sys/syscall.h>
 #include <unistd.h>
-#include <libcgroup.h>
+#include <stdio.h>
 
 static my_bool sys_cgroup_enabled = 0;
 
@@ -35,41 +35,30 @@ static MYSQL_SYSVAR_BOOL(enabled, sys_cgroup_enabled, PLUGIN_VAR_OPCMDARG,
 static void cgroup_set_task(const char *cgroup_name)
 {
 	FILE *f;
-	int ret;
+	FILE *fcgpath;
+	char cgpath[BUFSIZ] = {};
 	pid_t tid = syscall(SYS_gettid);
-	struct cgroup *cgroup;
-	struct cgroup_controller *cgc;
+
+	/* This might never happen, but avoid crashing MySQL just in case */
+	if (!cgroup_name)
+		return;
 
 	f = fopen("cgroup.log", "a");
 	if (!f)
 		return;
 
-	cgroup_init();
-	cgroup = cgroup_new_cgroup(cgroup_name);
-	if (!cgroup)
-		fprintf(f, "can't create cgroup %s\n", cgroup_name);
-
-	cgc = cgroup_add_controller(cgroup, "cpu");
-	if (!cgc) {
-		fprintf(f, "can't add cgroup CPU controller for %s\n",
-			cgroup_name);
+	snprintf(cgpath, sizeof(cgpath), "/sys/fs/cgroup/%s/cgroup.threads",
+		 cgroup_name);
+	fcgpath = fopen(cgpath, "w");
+	if (!fcgpath) {
+		fprintf(f, "can't open cgroup.threads file: %s\n", cgpath);
 		fflush(f);
+		fclose(f);
 		return;
 	}
 
-	/* This part is not needed to physically create cgroups, but
-	 * might be useful in some cases where mysql handles the creation
-	 * of the cgroups.
-	 */
-	ret = cgroup_create_cgroup(cgroup, 1);
-	if (ret)
-		fprintf(f, "can't create cgroup %s: %s\n", cgroup_name,
-			cgroup_strerror(ret));
-
-	ret = cgroup_attach_task_pid(cgroup, tid);
-	if (ret)
-		fprintf(f, "can't add a task %d to %s\n", tid,
-			cgroup_strerror(ret));
+	fprintf(fcgpath, "%d", tid);
+	fclose(fcgpath);
 
 	fflush(f);
 	fclose(f);

@@ -1,8 +1,7 @@
 setup:
-	mkdir -p /sys/fs/cgroup/cpu
-	mount -t cgroup -o cpu cpu /sys/fs/cgroup/cpu
-	mkdir -p /sys/fs/cgroup/cpu/mysql
-	chown mysql:mysql /sys/fs/cgroup/cpu/mysql
+	mkdir -p /sys/fs/cgroup/mysql
+	chown -R mysql:mysql /sys/fs/cgroup/mysql
+	echo threaded > /sys/fs/cgroup/mysql/cgroup.type
 
 all:
 	gcc cgroup.c -o cgroup.so -lcgroup `mysql_config --libs` `mysql_config --include | xargs -n1 | xargs -I {} echo {}/server` -shared
