@@ -85,6 +85,9 @@ static void cgroup_plugin(MYSQL_THD thd __attribute__((unused)),
 	if (event_class != MYSQL_AUDIT_CONNECTION_CLASS)
 		return;
 
+	if (!mec || !mec->user)
+		return;
+
 	if (!strcmp(mec->user, "root"))
 		return;
 
