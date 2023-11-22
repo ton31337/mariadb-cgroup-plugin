@@ -17,6 +17,7 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <errno.h>
 
 static my_bool sys_cgroup_enabled = 0;
 
@@ -35,8 +36,9 @@ static MYSQL_SYSVAR_BOOL(enabled, sys_cgroup_enabled, PLUGIN_VAR_OPCMDARG,
 static void cgroup_set_task(const char *cgroup_name)
 {
 	FILE *f;
-	FILE *fcgpath;
-	char cgpath[BUFSIZ] = {};
+	FILE *fcg_threads, *fcg_type;
+	char cg_threads[BUFSIZ] = {};
+	char cg_type[BUFSIZ] = {};
 	pid_t tid = syscall(SYS_gettid);
 
 	/* This might never happen, but avoid crashing MySQL just in case */
@@ -47,18 +49,36 @@ static void cgroup_set_task(const char *cgroup_name)
 	if (!f)
 		return;
 
-	snprintf(cgpath, sizeof(cgpath), "/sys/fs/cgroup/%s/cgroup.threads",
+	/* Set type to 'threaded'. Parent cgroup MUST have threaded type as
+	 * well.
+	 */
+	snprintf(cg_type, sizeof(cg_type), "/sys/fs/cgroup/%s/cgroup.type",
 		 cgroup_name);
-	fcgpath = fopen(cgpath, "w");
-	if (!fcgpath) {
-		fprintf(f, "can't open cgroup.threads file: %s\n", cgpath);
+	fcg_type = fopen(cg_type, "w");
+	if (!fcg_type) {
+		fprintf(f, "can't open cgroup.type file: %s (%d)\n", cg_type,
+			errno);
 		fflush(f);
 		fclose(f);
 		return;
 	}
+	fprintf(fcg_type, "threaded");
+	fflush(fcg_type);
+	fclose(fcg_type);
 
-	fprintf(fcgpath, "%d", tid);
-	fclose(fcgpath);
+	snprintf(cg_threads, sizeof(cg_threads),
+		 "/sys/fs/cgroup/%s/cgroup.threads", cgroup_name);
+	fcg_threads = fopen(cg_threads, "w");
+	if (!fcg_threads) {
+		fprintf(f, "can't open cgroup.threads file: %s (%d)\n",
+			cg_threads, errno);
+		fflush(f);
+		fclose(f);
+		return;
+	}
+	fprintf(fcg_threads, "%d", tid);
+	fflush(fcg_threads);
+	fclose(fcg_threads);
 
 	fflush(f);
 	fclose(f);
