@@ -6,4 +6,7 @@ setup:
 all:
 	gcc cgroup.c -o cgroup.so -lcgroup `mysql_config --libs` `mysql_config --include | xargs -n1 | xargs -I {} echo {}/server` -shared
 
+docker:
+	sudo ./contrib/docker/build.sh
+
 .DEFAULT_GOAL := all
